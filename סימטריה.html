@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="tool">
+  <meta name="design-style" content="sticker">
+  <title>מעבדת הסימטריה הכיתתית — משחק לוח חכם</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..900;1,9..40,400..900&family=Rubik:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+
+      /* Page and surfaces (Sticker style) */
+      --background: #fef7ff;
+      --surface-container-low: #ffffff;
+      --surface-container: #f8eef8;
+      --surface-container-high: #f2e8f2;
+
+      /* Ink */
+      --on-surface: #2e1a28;
+      --on-surface-variant: #604868;
+
+      /* Rules */
+      --outline: #907898;
+      --outline-variant: #dcc8e0;
+
+      /* Accents */
+      --primary: #c2207f;
+      --on-primary: #ffffff;
+      --primary-container: #f080c0;
+      --on-primary-container: #2e1a28;
+      --secondary: #7c52aa;
+      --on-secondary: #ffffff;
+      --tertiary: #0096cc;
+      --error: #c53030;
+      --on-error: #ffffff;
+
+      /* Data & Shape series */
+      --data-1: #c2207f;
+      --data-2: #7c52aa;
+      --data-3: #0096cc;
+      --data-4: #d96a00;
+      --data-context: #c8b8d0;
+
+      /* Semantic tokens */
+      --positive: #15803d;
+      --positive-bg: #dcfce7;
+      --warning: #b45309;
+      --warning-bg: #fef3c7;
+      --error-bg: #fee2e2;
+      --focus: #c2207f;
+
+      /* Shape SVG fills & stage tokens */
+      --stage-grid: #eee2f2;
+      --ghost-stroke: #b9a3c4;
+      --axis-reflection: #c2207f;
+      --axis-center: #7c52aa;
+      --shape-gold: #f59e0b;
+      --shape-gold-soft: #fde68a;
+      --shape-pink-soft: #fbcfe8;
+      --shape-sky-soft: #bae6fd;
+      --shape-grape-soft: #ddd6fe;
+
+      /* Fonts (Hebrew-first with Rubik + DM Sans) */
+      --font-headline: 'Rubik', 'DM Sans', sans-serif;
+      --font-body: 'Rubik', 'DM Sans', sans-serif;
+      --font-label: 'Rubik', 'DM Sans', sans-serif;
+
+      /* Type scale (Focused Tool) */
+      --display-size: clamp(1.65rem, 1.3rem + 1.2vw, 2.35rem);
+      --headline-size: clamp(1.25rem, 1.08rem + 0.55vw, 1.65rem);
+      --subhead-size: clamp(1.05rem, 0.98rem + 0.25vw, 1.25rem);
+      --body-size: clamp(0.95rem, 0.9rem + 0.18vw, 1.0625rem);
+      --label-size: 0.8125rem;
+
+      /* Spacing scale (4pt base) */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+      --space-3xl: 6rem;
+
+      /* Shape */
+      --rounded: 1rem;
+      --rounded-lg: 2rem;
+      --rounded-full: 9999px;
+
+      /* Style effects */
+      --shadow-pink: 0 4px 16px rgb(224 64 160 / 0.2);
+      --shadow-pink-deep: 0 10px 28px rgb(224 64 160 / 0.32);
+      --shadow-grape: 0 4px 16px rgb(124 82 170 / 0.2);
+      --shadow-sky: 0 4px 16px rgb(0 150 204 / 0.2);
+      --shadow-warn: 0 4px 16px rgb(217 106 0 / 0.24);
+      --pop-scale: scale(1.03);
+      --lift: translateY(-3px);
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+    }
+
+    /* Base reset */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.55;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    header { position: static !important; }
+    button, input, select, textarea { font-family: inherit; }
+
+    :focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* App Shell */
+    .app-shell {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--space-md) var(--space-lg) var(--space-xl);
+      display: grid;
+      gap: var(--space-md);
+      overflow: hidden;
+    }
+    .app-shell * { min-width: 0; }
+
+    /* Header Bar */
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      background-color: var(--surface-container-low);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-md) var(--space-lg);
+      box-shadow: var(--shadow-pink);
+    }
+
+    .brand-block {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .display {
+      font-family: var(--font-headline);
+      font-weight: 900;
+      font-size: var(--display-size);
+      line-height: 1.1;
+      letter-spacing: 0;
+      margin: 0;
+      color: var(--on-surface);
+    }
+    .display em {
+      font-style: normal;
+      color: var(--primary);
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--on-surface-variant);
+      font-size: var(--body-size);
+      font-weight: 500;
+    }
+
+    .topbar-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    /* Buttons & Pills */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      min-height: 48px;
+      padding: var(--space-sm) var(--space-lg);
+      border: 2px solid transparent;
+      border-radius: var(--rounded-full);
+      font-weight: 700;
+      font-size: var(--body-size);
+      cursor: pointer;
+      user-select: none;
+      transition: transform var(--dur-short) var(--ease-bounce),
+                  box-shadow var(--dur-short) var(--ease-out),
+                  background-color var(--dur-micro) var(--ease-out);
+    }
+    .btn:hover { transform: var(--pop-scale); }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: var(--on-primary);
+      box-shadow: var(--shadow-pink);
+    }
+    .btn-primary:hover { box-shadow: var(--shadow-pink-deep); }
+
+    .btn-secondary {
+      background-color: var(--secondary);
+      color: var(--on-secondary);
+      box-shadow: var(--shadow-grape);
+    }
+
+    .btn-soft {
+      background-color: var(--surface-container);
+      color: var(--on-surface);
+      border-color: var(--outline-variant);
+    }
+    .btn-soft:hover { background-color: var(--surface-container-high); }
+
+    .btn-sound-on {
+      background-color: var(--positive-bg);
+      color: var(--positive);
+      border-color: var(--positive);
+    }
+    .btn-sound-off {
+      background-color: var(--surface-container-high);
+      color: var(--on-surface-variant);
+      border-color: var(--outline);
+    }
+
+    .btn-warn-armed {
+      background-color: var(--error);
+      color: var(--on-error);
+    }
+
+    /* Main Smartboard Grid */
+    .arena-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+      gap: var(--space-lg);
+      align-items: start;
+    }
+
+    .card {
+      background-color: var(--surface-container-low);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-pink);
+    }
+    .card-sky { box-shadow: var(--shadow-sky); }
+    .card-grape { box-shadow: var(--shadow-grape); }
+
+    /* Left/Primary Stage Card (Visual Exploration + Question) */
+    .stage-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .challenge-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-md);
+      border-radius: var(--rounded-full);
+      font-size: var(--label-size);
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .pill-category {
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+    .pill-trap {
+      background-color: var(--warning-bg);
+      color: var(--warning);
+      border: 2px solid var(--data-4);
+      box-shadow: var(--shadow-warn);
+      animation: trapPulse 1.4s var(--ease-in-out) infinite alternate;
+    }
+    .pill-counter {
+      background-color: var(--surface-container);
+      color: var(--secondary);
+      border: 1.5px solid var(--outline-variant);
+    }
+
+    @keyframes trapPulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.04); }
+    }
+
+    .question-title {
+      font-family: var(--font-headline);
+      font-weight: 800;
+      font-size: var(--headline-size);
+      line-height: 1.25;
+      margin: 0;
+      color: var(--on-surface);
+    }
+
+    .question-prompt {
+      margin: 0;
+      color: var(--on-surface-variant);
+      font-size: var(--subhead-size);
+      font-weight: 500;
+    }
+
+    /* Interactive SVG Stage */
+    .svg-stage-wrap {
+      position: relative;
+      background-color: var(--surface-container);
+      border-radius: var(--rounded);
+      padding: var(--space-md);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      place-items: center;
+      min-height: 330px;
+      border: 2px solid var(--outline-variant);
+      overflow: hidden;
+    }
+
+    .stage-hud {
+      position: absolute;
+      top: var(--space-sm);
+      left: var(--space-sm);
+      right: var(--space-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-sm);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .hud-chip {
+      background-color: var(--surface-container-low);
+      color: var(--on-surface);
+      padding: var(--space-xs) var(--space-md);
+      border-radius: var(--rounded-full);
+      font-size: var(--label-size);
+      font-weight: 800;
+      box-shadow: var(--shadow-grape);
+      font-variant-numeric: tabular-nums;
+    }
+    .hud-match-yes {
+      background-color: var(--positive-bg);
+      color: var(--positive);
+    }
+    .hud-match-no {
+      background-color: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .shape-svg {
+      width: min(100%, 300px);
+      height: 300px;
+      display: block;
+      overflow: visible;
+      cursor: pointer;
+    }
+
+    .rotating-group {
+      transform-origin: 150px 150px;
+      transition: transform 380ms var(--ease-bounce);
+    }
+
+    /* Rotation & Mirror Controls */
+    .explorer-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+    }
+
+    .btn-angle {
+      min-width: 72px;
+      min-height: 48px;
+      padding: var(--space-xs) var(--space-md);
+      background-color: var(--surface-container-low);
+      color: var(--secondary);
+      border: 2px solid var(--secondary);
+      border-radius: var(--rounded-full);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .btn-angle:hover {
+      background-color: var(--secondary);
+      color: var(--on-secondary);
+    }
+
+    .btn-mirror-active {
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+    }
+
+    /* Classification Choices */
+    .choices-section {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .choices-label {
+      font-size: var(--label-size);
+      font-weight: 700;
+      color: var(--on-surface-variant);
+    }
+
+    .choices-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .choice-btn {
+      min-height: 54px;
+      padding: var(--space-sm) var(--space-md);
+      background-color: var(--surface-container);
+      color: var(--on-surface);
+      border: 2px solid var(--outline-variant);
+      border-radius: var(--rounded-full);
+      font-weight: 700;
+      font-size: var(--body-size);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      transition: transform var(--dur-short) var(--ease-bounce),
+                  background-color var(--dur-micro) var(--ease-out),
+                  box-shadow var(--dur-short) var(--ease-out);
+    }
+    .choice-btn:hover {
+      transform: var(--pop-scale);
+      background-color: var(--surface-container-high);
+    }
+    .choice-btn.choice-correct {
+      background-color: var(--positive-bg);
+      color: var(--positive);
+      border-color: var(--positive);
+      box-shadow: var(--shadow-sky);
+    }
+    .choice-btn.choice-wrong {
+      background-color: var(--error-bg);
+      color: var(--error);
+      border-color: var(--error);
+    }
+
+    /* Solution & Explanation Panel */
+    .solution-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+
+    .solution-box {
+      background-color: var(--surface-container);
+      border-radius: var(--rounded);
+      padding: var(--space-md) var(--space-lg);
+      border-right: 6px solid var(--primary);
+      display: none;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .solution-box.visible {
+      display: flex;
+      animation: fadeSlideUp var(--dur-short) var(--ease-out);
+    }
+    .solution-verdict {
+      font-weight: 800;
+      font-size: var(--subhead-size);
+      color: var(--primary);
+      margin: 0;
+    }
+    .solution-text {
+      margin: 0;
+      color: var(--on-surface);
+      font-size: var(--body-size);
+      line-height: 1.6;
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Right Column: Timer + Teams Scoreboard */
+    .control-column {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+
+    /* Timer Card */
+    .timer-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-md);
+      text-align: center;
+    }
+
+    .active-team-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      background-color: var(--primary-container);
+      color: var(--on-primary-container);
+      padding: var(--space-xs) var(--space-lg);
+      border-radius: var(--rounded-full);
+      font-weight: 800;
+      font-size: var(--subhead-size);
+    }
+
+    .timer-ring-wrap {
+      position: relative;
+      width: 176px;
+      height: 176px;
+      display: grid;
+      place-items: center;
+    }
+
+    .timer-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .timer-track {
+      fill: none;
+      stroke: var(--surface-container-high);
+      stroke-width: 14;
+    }
+    .timer-progress {
+      fill: none;
+      stroke: var(--tertiary);
+      stroke-width: 14;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 250ms linear, stroke var(--dur-short) var(--ease-out);
+    }
+    .timer-progress.urgent {
+      stroke: var(--error);
+    }
+
+    .timer-readout {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+    }
+    .timer-digits {
+      font-size: 3.4rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: var(--on-surface);
+    }
+    .timer-digits.urgent {
+      color: var(--error);
+      animation: urgentBeat 0.5s var(--ease-bounce) infinite alternate;
+    }
+    .timer-status-label {
+      font-size: var(--label-size);
+      font-weight: 700;
+      color: var(--on-surface-variant);
+      margin-top: var(--space-xs);
+    }
+
+    @keyframes urgentBeat {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+
+    .timer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--space-sm);
+      width: 100%;
+    }
+
+    .btn-next-team {
+      width: 100%;
+      min-height: 58px;
+      font-size: var(--subhead-size);
+      background-color: var(--primary);
+      color: var(--on-primary);
+      box-shadow: var(--shadow-pink-deep);
+    }
+
+    /* Teams Scoreboard */
+    .scoreboard-card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .scoreboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+    .scoreboard-title {
+      margin: 0;
+      font-size: var(--headline-size);
+      font-weight: 800;
+      color: var(--on-surface);
+    }
+
+    .teams-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .team-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      background-color: var(--surface-container);
+      border-radius: var(--rounded-full);
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform var(--dur-micro) var(--ease-bounce),
+                  background-color var(--dur-micro) var(--ease-out),
+                  box-shadow var(--dur-short) var(--ease-out);
+    }
+    .team-row:hover {
+      background-color: var(--surface-container-high);
+    }
+    .team-row.active-team {
+      background-color: var(--surface-container-low);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-pink);
+    }
+
+    .team-identity {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-weight: 800;
+      font-size: var(--subhead-size);
+    }
+
+    .team-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: var(--rounded-full);
+      flex-shrink: 0;
+    }
+
+    .team-stars-display {
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      font-size: var(--subhead-size);
+      color: var(--primary);
+      min-width: 56px;
+      text-align: center;
+    }
+
+    .team-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .btn-star-add {
+      min-height: 44px;
+      padding: var(--space-xs) var(--space-md);
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border: none;
+      border-radius: var(--rounded-full);
+      font-weight: 800;
+      font-size: var(--body-size);
+      cursor: pointer;
+      box-shadow: var(--shadow-pink);
+      transition: transform var(--dur-micro) var(--ease-bounce);
+    }
+    .btn-star-add:hover { transform: var(--pop-scale); }
+    .btn-star-add:active { transform: scale(0.94); }
+
+    .btn-star-sub {
+      min-width: 44px;
+      min-height: 44px;
+      background-color: var(--surface-container-low);
+      color: var(--on-surface-variant);
+      border: 1.5px solid var(--outline-variant);
+      border-radius: var(--rounded-full);
+      font-weight: 800;
+      font-size: var(--subhead-size);
+      cursor: pointer;
+    }
+
+    /* Bottom Question Jump Strip */
+    .deck-strip {
+      background-color: var(--surface-container-low);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-md) var(--space-lg);
+      box-shadow: var(--shadow-grape);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .deck-label {
+      font-size: var(--label-size);
+      font-weight: 700;
+      color: var(--on-surface-variant);
+    }
+
+    .deck-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    .deck-pill {
+      min-width: 48px;
+      min-height: 44px;
+      padding: var(--space-xs) var(--space-md);
+      border-radius: var(--rounded-full);
+      border: 2px solid var(--outline-variant);
+      background-color: var(--surface-container);
+      color: var(--on-surface);
+      font-weight: 700;
+      font-size: var(--label-size);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      transition: transform var(--dur-micro) var(--ease-bounce),
+                  background-color var(--dur-micro) var(--ease-out);
+    }
+    .deck-pill:hover { transform: var(--pop-scale); }
+    .deck-pill.current {
+      background-color: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+      box-shadow: var(--shadow-pink);
+    }
+    .deck-pill.trap-item {
+      border-color: var(--data-4);
+    }
+
+    /* Built-in Confetti Layer (No external CDN needed) */
+    .confetti-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 9999;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      opacity: 0;
+      animation: confettiFall 1.3s var(--ease-out) forwards;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.6) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(1.1) rotate(540deg);
+      }
+    }
+
+    .status-toast {
+      font-size: var(--label-size);
+      font-weight: 700;
+      color: var(--secondary);
+      min-height: 1.4em;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 980px) {
+      .arena-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        padding: var(--space-sm);
+      }
+      .topbar, .card, .deck-strip {
+        padding: var(--space-md);
+        border-radius: var(--rounded);
+      }
+      .choices-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+
+  <main class="app-shell">
+    <!-- Top Smartboard Header -->
+    <header class="topbar">
+      <div class="brand-block">
+        <h1 class="display">מעבדת <em>הסימטריה</em> הכיתתית</h1>
+        <p class="subtitle">חקר סיבוב, שיקוף ואתגרי מלכודת ללוח החכם · סבבים של <bdi dir="ltr">45</bdi> שניות</p>
+      </div>
+      <div class="topbar-controls">
+        <button type="button" id="soundToggleBtn" class="btn btn-sound-on" onclick="toggleSound()">
+          <span id="soundIcon" aria-hidden="true">🔊</span>
+          <span id="soundLabel">מוזיקה ואפקטים: פעיל</span>
+        </button>
+        <button type="button" id="fullscreenBtn" class="btn btn-soft" onclick="toggleFullscreen()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+          </svg>
+          <span id="fullscreenLabel">מסך מלא</span>
+        </button>
+        <button type="button" id="resetGameBtn" class="btn btn-soft" onclick="handleResetGame(this)">
+          איפוס משחק
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Two-Column Smartboard Arena -->
+    <section class="arena-grid">
+      <!-- Interactive Shape & Question Stage -->
+      <article class="card stage-card">
+        <div class="challenge-meta">
+          <span id="categoryBadge" class="pill-badge pill-category">חקר סימטריית סיבוב</span>
+          <span id="trapBadge" class="pill-badge pill-trap" style="display: none;">⚠️ זהירות, מלכודת!</span>
+          <span id="questionCounter" class="pill-badge pill-counter">אתגר 1 מתוך 15</span>
+        </div>
+
+        <h2 id="questionTitle" class="question-title">הפרח המסתובב</h2>
+        <p id="questionPrompt" class="question-prompt">בדקו בעזרת כפתורי הסיבוב: באילו זוויות הפרח מתלכד בדיוק עם עצמו?</p>
+
+        <!-- SVG Exploration Stage -->
+        <div class="svg-stage-wrap">
+          <div class="stage-hud">
+            <span id="angleHud" class="hud-chip">זווית סיבוב: <bdi dir="ltr">0°</bdi></span>
+            <span id="matchHud" class="hud-chip hud-match-yes">מצב התחלה (<bdi dir="ltr">0°</bdi>)</span>
+          </div>
+
+          <svg id="shapeStageSvg" class="shape-svg" viewBox="0 0 300 300" onclick="rotateByStep(60)" role="img" aria-label="צורה אינטראקטיבית לבדיקת סימטריה">
+            <defs>
+              <pattern id="stageDots" width="24" height="24" patternUnits="userSpaceOnUse">
+                <circle cx="12" cy="12" r="1.4" fill="var(--stage-grid)"></circle>
+              </pattern>
+            </defs>
+            <rect x="0" y="0" width="300" height="300" rx="18" fill="transparent"></rect>
+            <rect x="6" y="6" width="288" height="288" rx="16" fill="url(#stageDots)"></rect>
+
+            <!-- Ghost outline of original shape at 0 deg -->
+            <g id="ghostLayer" opacity="0.55"></g>
+
+            <!-- Active rotating shape -->
+            <g id="rotatingGroup" class="rotating-group"></g>
+
+            <!-- Reflection Axes overlay -->
+            <g id="axesLayer" style="display: none;"></g>
+
+            <!-- Center pivot dot -->
+            <circle cx="150" cy="150" r="5" fill="var(--axis-center)" stroke="var(--surface-container-low)" stroke-width="2"></circle>
+          </svg>
+        </div>
+
+        <!-- Live Rotation & Reflection Check Controls -->
+        <div class="explorer-controls" aria-label="כלי בדיקה חיים על הלוח">
+          <button type="button" class="btn btn-angle" onclick="rotateByStep(60)"><bdi dir="ltr">+60°</bdi></button>
+          <button type="button" class="btn btn-angle" onclick="rotateByStep(90)"><bdi dir="ltr">+90°</bdi></button>
+          <button type="button" class="btn btn-angle" onclick="rotateByStep(120)"><bdi dir="ltr">+120°</bdi></button>
+          <button type="button" class="btn btn-angle" onclick="rotateByStep(180)"><bdi dir="ltr">+180°</bdi></button>
+          <button type="button" class="btn btn-soft" onclick="resetRotation()">איפוס <bdi dir="ltr">0°</bdi></button>
+          <button type="button" id="mirrorToggleBtn" class="btn btn-soft" onclick="toggleMirrorAxes()">
+            בדיקת צירי שיקוף
+          </button>
+        </div>
+
+        <!-- Classification Answer Strip -->
+        <div class="choices-section">
+          <div class="choices-label">בחרו את הסיווג הנכון לצורה (לחיצה בודקת מיד):</div>
+          <div class="choices-grid" id="choicesGrid">
+            <button type="button" class="choice-btn" data-choice="reflection" onclick="submitChoice('reflection')">
+              סימטריית שיקוף בלבד
+            </button>
+            <button type="button" class="choice-btn" data-choice="rotation" onclick="submitChoice('rotation')">
+              סימטריית סיבוב בלבד
+            </button>
+            <button type="button" class="choice-btn" data-choice="both" onclick="submitChoice('both')">
+              גם שיקוף וגם סיבוב
+            </button>
+            <button type="button" class="choice-btn" data-choice="none" onclick="submitChoice('none')">
+              ללא סימטריה כלל
+            </button>
+          </div>
+        </div>
+
+        <!-- Solution & Explanation Reveal -->
+        <div class="solution-bar">
+          <button type="button" id="revealSolutionBtn" class="btn btn-secondary" onclick="toggleSolution()">
+            חשיפת פתרון והסבר מתמטי
+          </button>
+          <span id="feedbackStatus" class="status-toast" aria-live="polite"></span>
+        </div>
+
+        <div id="solutionBox" class="solution-box" aria-live="polite">
+          <p id="solutionVerdict" class="solution-verdict"></p>
+          <p id="solutionText" class="solution-text"></p>
+        </div>
+      </article>
+
+      <!-- Right Column: 45-Second Round Timer & 5-Team Scoreboard -->
+      <aside class="control-column">
+        <!-- Timer Card -->
+        <section class="card card-sky timer-card">
+          <div id="activeTeamBanner" class="active-team-banner">
+            בתור על הלוח: צוות 1
+          </div>
+
+          <div class="timer-ring-wrap">
+            <svg class="timer-svg" viewBox="0 0 180 180" aria-hidden="true">
+              <circle class="timer-track" cx="90" cy="90" r="76"></circle>
+              <circle id="timerProgressCircle" class="timer-progress" cx="90" cy="90" r="76" stroke-dasharray="477.52" stroke-dashoffset="0"></circle>
+            </svg>
+            <div class="timer-readout">
+              <span id="timerDigits" class="timer-digits">45</span>
+              <span id="timerStatusLabel" class="timer-status-label">מוכנים להזנקה</span>
+            </div>
+          </div>
+
+          <div class="timer-actions">
+            <button type="button" id="startPauseTimerBtn" class="btn btn-secondary" onclick="toggleTimer()">
+              ▶ הפעל סבב (<bdi dir="ltr">45</bdi> שנ׳)
+            </button>
+            <button type="button" class="btn btn-soft" onclick="resetTimerOnly()">
+              ↺ אפס שעון
+            </button>
+          </div>
+
+          <button type="button" class="btn btn-next-team" onclick="nextTeamAndQuestion()">
+            הצוות הבא ללוח ←
+          </button>
+        </section>
+
+        <!-- 5-Team Scoreboard Card -->
+        <section class="card card-grape scoreboard-card">
+          <div class="scoreboard-header">
+            <h2 class="scoreboard-title">לוח כוכבים לצוותים</h2>
+            <span id="leaderBadge" class="pill-badge pill-category">תחרות פתוחה</span>
+          </div>
+
+          <div class="teams-list" id="teamsList">
+            <!-- Rendered by JS -->
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <!-- Bottom Deck Navigation -->
+    <nav class="deck-strip" aria-label="בחירת אתגר ישירה">
+      <div class="deck-label">מעבר מהיר בין כל <bdi dir="ltr">15</bdi> האתגרים (שקופיות 30–47 וחקר סיבוב):</div>
+      <div class="deck-pills" id="deckPills">
+        <!-- Rendered by JS -->
+      </div>
+    </nav>
+  </main>
+
+  <api-shim></api-shim>
+
+  <script>
+    const ROUND_DURATION = 45;
+    const RING_CIRCUMFERENCE = 2 * Math.PI * 76;
+
+    const TEAM_COLORS = [
+      `var(--data-1)`,
+      `var(--data-2)`,
+      `var(--data-3)`,
+      `var(--data-4)`,
+      `var(--primary)`
+    ];
+
+    const CHALLENGES = [
+      {
+        id: `flower-pinwheel`,
+        category: `חקר סימטריית סיבוב`,
+        isTrap: false,
+        title: `הפרח המסתובב (שבשבת)`,
+        prompt: `סובבו את הפרח בעזרת הכפתורים ובדקו: האם יש לו ציר שיקוף, או רק סימטריית סיבוב?`,
+        answer: `rotation`,
+        verdict: `סימטריית סיבוב בלבד (סדר 6, זווית 60°)`,
+        explanation: `מבחן הקיפול נכשל! מכיוון שכל 6 עלי הכותרת מעוקלים לאותו כיוון, אין אף קו קיפול שמחלק את הפרח לשני חצאים תואמים. לעומת זאת, כל סיבוב של 60° סביב המרכז (<bdi dir="ltr">360° ÷ 6 = 60°</bdi>) מחזיר אותו בדיוק למקומו!`,
+        validAngles: [0, 60, 120, 180, 240, 300],
+        axesCount: 0,
+        renderSvg: renderPinwheelFlower,
+        renderAxes: renderNoAxesHint
+      },
+      {
+        id: `triangle-explore`,
+        category: `חקר סימטריית סיבוב`,
+        isTrap: false,
+        title: `המשולש המתחכם: 120° מול 90°`,
+        prompt: `סובבו את המשולש שווה-הצלעות ב-90° ואז ב-120°. מדוע באחד הוא מתלכד ובשני לא?`,
+        answer: `both`,
+        verdict: `גם סימטריית שיקוף (3 צירים) וגם סימטריית סיבוב (כל 120°)`,
+        explanation: `למשולש שווה-צלעות יש 3 קודקודים זהים, ולכן זווית הסיבוב הבסיסית היא <bdi dir="ltr">360° ÷ 3 = 120°</bdi>. בסיבוב של <bdi dir="ltr">90°</bdi> הקודקודים פונים הצידה ואינם מתלכדים! בנוסף יש לו 3 צירי שיקוף מכל קודקוד לאמצע הצלע הנגדית.`,
+        validAngles: [0, 120, 240],
+        axesCount: 3,
+        renderSvg: renderEquilateralTriangle,
+        renderAxes: renderTriangleAxes
+      },
+      {
+        id: `fan-3`,
+        category: `חקר סימטריית סיבוב`,
+        isTrap: false,
+        title: `מאוורר המעבדה (3 להבים)`,
+        prompt: `הלהבים של המאוורר מעוקלים. איזה סוג סימטריה יש לו, ובאיזו זווית הוא מתלכד?`,
+        answer: `rotation`,
+        verdict: `סימטריית סיבוב בלבד (סדר 3, זווית 120°)`,
+        explanation: `למאוורר 3 להבים זהים במרווחים שווים, ולכן בסיבוב של <bdi dir="ltr">120°</bdi> או <bdi dir="ltr">240°</bdi> (<bdi dir="ltr">360° ÷ 3 = 120°</bdi>) הוא מתלכד עם עצמו. אך בגלל עיקול הלהבים, אין לו אף ציר שיקוף!`,
+        validAngles: [0, 120, 240],
+        axesCount: 0,
+        renderSvg: renderFan3,
+        renderAxes: renderNoAxesHint
+      },
+      {
+        id: `letter-s`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `האות S`,
+        prompt: `האם אפשר לקפל את האות S על קו מראה, או שאולי צריך לסובב אותה?`,
+        answer: `rotation`,
+        verdict: `סימטריית סיבוב בלבד (זווית 180°, סדר 2)`,
+        explanation: `אם נקפל את האות S לאורך או לרוחב, הלולאות יפנו לכיוונים הפוכים — לכן אין שיקוף. אבל בסיבוב של <bdi dir="ltr">180°</bdi> (חצי סיבוב) סביב מרכזה, היא מתלכדת עם עצמה בצורה מושלמת!`,
+        validAngles: [0, 180],
+        axesCount: 0,
+        renderSvg: renderLetterS,
+        renderAxes: renderNoAxesHint
+      },
+      {
+        id: `letter-h`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `האות H`,
+        prompt: `בדקו את האות H: כמה צירי שיקוף יש לה, והאם יש לה גם סימטריית סיבוב?`,
+        answer: `both`,
+        verdict: `גם סימטריית שיקוף (2 צירים) וגם סימטריית סיבוב (180°)`,
+        explanation: `לאות H יש שני צירי שיקוף (אנכי ואופקי) וגם סימטריית סיבוב בחצי סיבוב (<bdi dir="ltr">180°</bdi>, סדר 2).`,
+        validAngles: [0, 180],
+        axesCount: 2,
+        renderSvg: renderLetterH,
+        renderAxes: renderCrossAxes
+      },
+      {
+        id: `lightning`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `סמל הברק`,
+        prompt: `סובבו ונסו לקפל את סמל הברק. האם הוא מסתיר סימטריה כלשהי?`,
+        answer: `none`,
+        verdict: `ללא סימטריה כלל (א-סימטרי)`,
+        explanation: `לסמל הברק החלק העליון רחב ואלכסוני והחלק התחתון מחודד וצר — הוא אינו מתלכד באף קיפול ובאף סיבוב חלקי (מלבד סיבוב שלם של <bdi dir="ltr">360°</bdi>).`,
+        validAngles: [0],
+        axesCount: 0,
+        renderSvg: renderLightning,
+        renderAxes: renderNoAxesHint
+      },
+      {
+        id: `trap-flower-colors`,
+        category: `אתגר מלכודת`,
+        isTrap: true,
+        title: `זהירות, מלכודת! הפרח הצבעוני`,
+        prompt: `הסתכלו היטב על עלי הכותרת של הפרח. האם יש לו סימטריה מלאה?`,
+        answer: `none`,
+        verdict: `ללא סימטריה — בגלל הצבעים!`,
+        explanation: `מלכודת קלאסית! הצורה הגיאומטרית של הפרח נראית סימטרית לחלוטין (4 עלים זהים), אבל כל עלה צבוע בצבע שונה! בקיפול או בסיבוב הצבעים אינם מתלכדים זה על זה, ולכן הצורה עצמה חסרת סימטריה.`,
+        validAngles: [0],
+        axesCount: 0,
+        renderSvg: renderTrapFlower,
+        renderAxes: renderNoAxesHint
+      },
+      {
+        id: `star-david`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `מגן דוד`,
+        prompt: `בדקו אילו זוויות סיבוב ואילו קווי שיקוף מתאימים למגן הדוד.`,
+        answer: `both`,
+        verdict: `גם שיקוף (6 צירים) וגם סיבוב (סדר 6, כל 60°)`,
+        explanation: `מגן דוד בנוי משני משולשים שווי-צלעות המונחים הפוך זה על זה. יש לו 6 קודקודים זהים ולכן הוא מתלכד כל <bdi dir="ltr">60°</bdi> (<bdi dir="ltr">360° ÷ 6 = 60°</bdi>) ויש לו 6 צירי שיקוף!`,
+        validAngles: [0, 60, 120, 180, 240, 300],
+        axesCount: 6,
+        renderSvg: renderStarOfDavid,
+        renderAxes: renderSixAxes
+      },
+      {
+        id: `arrow-up`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `חץ מצפן כלפי מעלה`,
+        prompt: `האם החץ נשאר זהה כשמסובבים אותו ב-180°, או רק כשמקפלים אותו?`,
+        answer: `reflection`,
+        verdict: `סימטריית שיקוף בלבד (ציר אנכי אחד)`,
+        explanation: `לחץ יש ציר שיקוף אנכי אחד במרכזו (צד ימין ושמאל זהים). אך אם נסובב אותו ב-<bdi dir="ltr">180°</bdi> הוא יצביע למטה במקום למעלה — ולכן אין לו סימטריית סיבוב!`,
+        validAngles: [0],
+        axesCount: 1,
+        renderSvg: renderArrowUp,
+        renderAxes: renderVerticalAxis
+      },
+      {
+        id: `arrows-cycle`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `זוג חצים מעגליים`,
+        prompt: `שני חצים הרודפים זה אחר זה במעגל — שיקוף, סיבוב או שניהם?`,
+        answer: `rotation`,
+        verdict: `סימטריית סיבוב בלבד (זווית 180°, סדר 2)`,
+        explanation: `אם נצייר קו מראה, החץ המשתקף יצביע לכיוון ההפוך והמעגל יישבר. אבל בסיבוב של <bdi dir="ltr">180°</bdi> החץ העליון מחליף מקום עם התחתון בדיוק מושלם!`,
+        validAngles: [0, 180],
+        axesCount: 0,
+        renderSvg: renderArrowsCycle,
+        renderAxes: renderNoAxesHint
+      },
+      {
+        id: `trap-butterfly`,
+        category: `אתגר מלכודת`,
+        isTrap: true,
+        title: `זהירות, מלכודת! הפרפר הדו-צבעוני`,
+        prompt: `כולם יודעים שפרפר הוא סימטרי... האומנם? בדקו היטב את הכנפיים!`,
+        answer: `none`,
+        verdict: `ללא סימטריה — בגלל הצבעים!`,
+        explanation: `מלכודת! קו המתאר של הפרפר סימטרי להפליא, אך הכנף השמאלית צבועה בתכלת והימנית בכתום. כשנקפל את הפרפר לאורך ציר האמצע, הצבעים לא יתאימו זה לזה!`,
+        validAngles: [0],
+        axesCount: 0,
+        renderSvg: renderTrapButterfly,
+        renderAxes: renderNoAxesHint
+      },
+      {
+        id: `emoji-smile`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `אימוג'י מחייך`,
+        prompt: `לאימוג'י החייכן יש צורה עגולה. האם זה אומר שיש לו סימטריית סיבוב?`,
+        answer: `reflection`,
+        verdict: `סימטריית שיקוף בלבד (ציר אנכי אחד)`,
+        explanation: `בזכות העיניים והחיוך, לאימוג'י יש ציר שיקוף אנכי אחד במרכז הפנים. סיבוב של <bdi dir="ltr">180°</bdi> הופך את הפנים על הראש (העיניים למטה והחיוך הופך לעצוב למעלה), ולכן אין סימטריית סיבוב!`,
+        validAngles: [0],
+        axesCount: 1,
+        renderSvg: renderEmojiSmile,
+        renderAxes: renderVerticalAxis
+      },
+      {
+        id: `diamond-gem`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `יהלום מלוטש`,
+        prompt: `שימו לב לראש השטוח של היהלום ולשפיץ למטה — איזו סימטריה קיימת?`,
+        answer: `reflection`,
+        verdict: `סימטריית שיקוף בלבד (ציר אנכי אחד)`,
+        explanation: `החלק העליון של היהלום רחב ושטוח והחלק התחתון מחודד, ולכן יש לו רק ציר שיקוף אנכי אחד (החוצה אותו מימין לשמאל) ואין לו סימטריית סיבוב.`,
+        validAngles: [0],
+        axesCount: 1,
+        renderSvg: renderDiamondGem,
+        renderAxes: renderVerticalAxis
+      },
+      {
+        id: `swirl-4`,
+        category: `סיווג צורות וסמלים`,
+        isTrap: false,
+        title: `מערבולת גלקטית (4 זרועות)`,
+        prompt: `4 זרועות ספירליות יוצאות מהמרכז. בדקו עם כפתור +90°!`,
+        answer: `rotation`,
+        verdict: `סימטריית סיבוב בלבד (סדר 4, כל 90°)`,
+        explanation: `כל סיבוב של <bdi dir="ltr">90°</bdi> (<bdi dir="ltr">360° ÷ 4 = 90°</bdi>) מסובב כל זרוע בדיוק אל הזרוע הבאה. כמו בשבשבת, כיוון הספירלה מונע כל סימטריית שיקוף!`,
+        validAngles: [0, 90, 180, 270],
+        axesCount: 0,
+        renderSvg: renderSwirl4,
+        renderAxes: renderNoAxesHint
+      },
+      {
+        id: `trap-square`,
+        category: `אתגר מלכודת`,
+        isTrap: true,
+        title: `זהירות, מלכודת! הריבוע הצבוע`,
+        prompt: `לריבוע רגיל יש 4 צירי שיקוף וסיבוב כל 90°. מה קרה כאן?`,
+        answer: `none`,
+        verdict: `ללא סימטריה — בגלל הצבעים!`,
+        explanation: `מלכודת גיאומטרית! הצביעה של ארבעת המשולשים (שניים סמוכים ורודים, אחד תכלת ואחד כתום) שוברת גם את כל צירי השיקוף וגם את כל זוויות הסיבוב!`,
+        validAngles: [0],
+        axesCount: 0,
+        renderSvg: renderTrapSquare,
+        renderAxes: renderNoAxesHint
+      }
+    ];
+
+    /* ---------- SVG Shape Renderers (All centered at 150,150 in 300x300 viewBox) ---------- */
+    function renderPinwheelFlower(isGhost) {
+      let petals = ``;
+      for (let i = 0; i < 6; i++) {
+        const angle = i * 60;
+        const fill = isGhost ? `none` : (i % 2 === 0 ? `var(--data-1)` : `var(--data-2)`);
+        const stroke = isGhost ? `var(--ghost-stroke)` : `var(--on-surface)`;
+        const dash = isGhost ? `stroke-dasharray="5 4"` : ``;
+        petals += `<path d="M150,150 C142,108 164,54 196,62 C214,68 188,116 150,150 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.5" ${dash} transform="rotate(${angle} 150 150)"/>`;
+      }
+      const center = isGhost
+        ? `<circle cx="150" cy="150" r="16" fill="none" stroke="var(--ghost-stroke)" stroke-width="2.5" stroke-dasharray="4 3"/>`
+        : `<circle cx="150" cy="150" r="16" fill="var(--shape-gold)" stroke="var(--on-surface)" stroke-width="2.5"/>`;
+      return petals + center;
+    }
+
+    function renderEquilateralTriangle(isGhost) {
+      const pts = `150,45 240.93,202.5 59.07,202.5`;
+      const innerPts = `150,90 201.96,180 98.04,180`;
+      if (isGhost) {
+        return `<polygon points="${pts}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="7 5" stroke-linejoin="round"/>`;
+      }
+      return `
+        <polygon points="${pts}" fill="var(--shape-sky-soft)" stroke="var(--data-3)" stroke-width="4.5" stroke-linejoin="round"/>
+        <polygon points="${innerPts}" fill="var(--data-3)" opacity="0.22"/>
+      `;
+    }
+
+    function renderFan3(isGhost) {
+      let blades = ``;
+      for (let i = 0; i < 3; i++) {
+        const angle = i * 120;
+        const fill = isGhost ? `none` : `var(--data-3)`;
+        const stroke = isGhost ? `var(--ghost-stroke)` : `var(--on-surface)`;
+        const dash = isGhost ? `stroke-dasharray="6 4"` : ``;
+        blades += `<path d="M150,150 C124,110 132,54 176,48 C206,44 202,102 150,150 Z" fill="${fill}" fill-opacity="${isGhost ? 1 : 0.85}" stroke="${stroke}" stroke-width="2.8" ${dash} transform="rotate(${angle} 150 150)"/>`;
+      }
+      const hub = isGhost
+        ? `<circle cx="150" cy="150" r="18" fill="none" stroke="var(--ghost-stroke)" stroke-width="2.5" stroke-dasharray="4 3"/>`
+        : `<circle cx="150" cy="150" r="18" fill="var(--surface-container-low)" stroke="var(--on-surface)" stroke-width="3"/>`;
+      return blades + hub;
+    }
+
+    function renderLetterS(isGhost) {
+      /* Exact 180-deg point symmetry around (150,150): (x,y) <-> (300-x, 300-y) */
+      const d = `M 196 86 C 186 58, 114 58, 108 100 C 102 138, 150 144, 150 150 C 150 156, 198 162, 192 200 C 186 242, 114 242, 104 214`;
+      if (isGhost) {
+        return `<path d="${d}" fill="none" stroke="var(--ghost-stroke)" stroke-width="26" stroke-linecap="round" stroke-dasharray="8 8"/>`;
+      }
+      return `
+        <path d="${d}" fill="none" stroke="var(--on-surface)" stroke-width="32" stroke-linecap="round"/>
+        <path d="${d}" fill="none" stroke="var(--data-1)" stroke-width="24" stroke-linecap="round"/>
+      `;
+    }
+
+    function renderLetterH(isGhost) {
+      const shapes = `
+        <rect x="82" y="55" width="32" height="190" rx="8"/>
+        <rect x="186" y="55" width="32" height="190" rx="8"/>
+        <rect x="106" y="134" width="88" height="32" rx="4"/>
+      `;
+      if (isGhost) {
+        return `<g fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5">${shapes}</g>`;
+      }
+      return `<g fill="var(--data-2)" stroke="var(--on-surface)" stroke-width="3">${shapes}</g>`;
+    }
+
+    function renderLightning(isGhost) {
+      const pts = `166,44 92,158 148,158 124,256 212,132 156,132`;
+      if (isGhost) {
+        return `<polygon points="${pts}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5" stroke-linejoin="round"/>`;
+      }
+      return `<polygon points="${pts}" fill="var(--shape-gold)" stroke="var(--on-surface)" stroke-width="3.5" stroke-linejoin="round"/>`;
+    }
+
+    function renderTrapFlower(isGhost) {
+      const fills = [`var(--data-1)`, `var(--data-3)`, `var(--data-4)`, `var(--data-2)`];
+      let petals = ``;
+      for (let i = 0; i < 4; i++) {
+        const angle = i * 90;
+        if (isGhost) {
+          petals += `<ellipse cx="150" cy="88" rx="30" ry="52" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5" transform="rotate(${angle} 150 150)"/>`;
+        } else {
+          petals += `<ellipse cx="150" cy="88" rx="30" ry="52" fill="${fills[i]}" stroke="var(--on-surface)" stroke-width="3" transform="rotate(${angle} 150 150)"/>`;
+        }
+      }
+      const center = isGhost
+        ? `<circle cx="150" cy="150" r="22" fill="none" stroke="var(--ghost-stroke)" stroke-width="2.5" stroke-dasharray="4 3"/>`
+        : `<circle cx="150" cy="150" r="22" fill="var(--shape-gold)" stroke="var(--on-surface)" stroke-width="3"/>`;
+      return petals + center;
+    }
+
+    function renderStarOfDavid(isGhost) {
+      const up = `150,45 240.93,202.5 59.07,202.5`;
+      const down = `150,255 59.07,97.5 240.93,97.5`;
+      if (isGhost) {
+        return `
+          <polygon points="${up}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5" stroke-linejoin="round"/>
+          <polygon points="${down}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5" stroke-linejoin="round"/>
+        `;
+      }
+      return `
+        <polygon points="${up}" fill="var(--data-3)" fill-opacity="0.22" stroke="var(--data-3)" stroke-width="7" stroke-linejoin="round"/>
+        <polygon points="${down}" fill="var(--data-2)" fill-opacity="0.22" stroke="var(--data-2)" stroke-width="7" stroke-linejoin="round"/>
+      `;
+    }
+
+    function renderArrowUp(isGhost) {
+      const pts = `150,46 226,130 178,130 178,250 122,250 122,130 74,130`;
+      if (isGhost) {
+        return `<polygon points="${pts}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5" stroke-linejoin="round"/>`;
+      }
+      return `<polygon points="${pts}" fill="var(--data-1)" stroke="var(--on-surface)" stroke-width="3.5" stroke-linejoin="round"/>`;
+    }
+
+    function renderArrowsCycle(isGhost) {
+      /* Two curved arrows 180-deg symmetric around (150,150) */
+      const topArc = `M 86 116 A 72 72 0 0 1 214 116`;
+      const topHead = `224,132 226,96 196,118`;
+      const botArc = `M 214 184 A 72 72 0 0 1 86 184`;
+      const botHead = `76,168 74,204 104,182`;
+      if (isGhost) {
+        return `
+          <path d="${topArc}" fill="none" stroke="var(--ghost-stroke)" stroke-width="14" stroke-linecap="round" stroke-dasharray="6 6"/>
+          <path d="${botArc}" fill="none" stroke="var(--ghost-stroke)" stroke-width="14" stroke-linecap="round" stroke-dasharray="6 6"/>
+        `;
+      }
+      return `
+        <path d="${topArc}" fill="none" stroke="var(--data-2)" stroke-width="16" stroke-linecap="round"/>
+        <polygon points="${topHead}" fill="var(--data-2)" stroke="var(--on-surface)" stroke-width="2" stroke-linejoin="round"/>
+        <path d="${botArc}" fill="none" stroke="var(--data-2)" stroke-width="16" stroke-linecap="round"/>
+        <polygon points="${botHead}" fill="var(--data-2)" stroke="var(--on-surface)" stroke-width="2" stroke-linejoin="round"/>
+      `;
+    }
+
+    function renderTrapButterfly(isGhost) {
+      const leftWing = `M 144 134 C 90 56, 36 86, 56 144 C 72 184, 114 176, 144 162 Z M 144 166 C 102 174, 72 216, 98 238 C 120 254, 140 218, 144 186 Z`;
+      const rightWing = `M 156 134 C 210 56, 264 86, 244 144 C 228 184, 186 176, 156 162 Z M 156 166 C 198 174, 228 216, 202 238 C 180 254, 160 218, 156 186 Z`;
+      const body = `<rect x="143" y="102" width="14" height="106" rx="7"/><path d="M146,104 C138,78 124,72 118,74 M154,104 C162,78 176,72 182,74" fill="none" stroke="var(--on-surface)" stroke-width="3" stroke-linecap="round"/>`;
+      if (isGhost) {
+        return `
+          <path d="${leftWing}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5"/>
+          <path d="${rightWing}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5"/>
+        `;
+      }
+      return `
+        <path d="${leftWing}" fill="var(--data-3)" stroke="var(--on-surface)" stroke-width="3"/>
+        <path d="${rightWing}" fill="var(--data-4)" stroke="var(--on-surface)" stroke-width="3"/>
+        <g fill="var(--on-surface)">${body}</g>
+      `;
+    }
+
+    function renderEmojiSmile(isGhost) {
+      if (isGhost) {
+        return `<circle cx="150" cy="150" r="95" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="7 5"/>`;
+      }
+      return `
+        <circle cx="150" cy="150" r="95" fill="var(--shape-gold-soft)" stroke="var(--on-surface)" stroke-width="4"/>
+        <circle cx="116" cy="126" r="11" fill="var(--on-surface)"/>
+        <circle cx="184" cy="126" r="11" fill="var(--on-surface)"/>
+        <path d="M 104 172 Q 150 216 196 172" fill="none" stroke="var(--on-surface)" stroke-width="8" stroke-linecap="round"/>
+      `;
+    }
+
+    function renderDiamondGem(isGhost) {
+      const outer = `96,68 204,68 244,124 150,242 56,124`;
+      if (isGhost) {
+        return `<polygon points="${outer}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5" stroke-linejoin="round"/>`;
+      }
+      return `
+        <polygon points="${outer}" fill="var(--shape-sky-soft)" stroke="var(--data-3)" stroke-width="4" stroke-linejoin="round"/>
+        <line x1="56" y1="124" x2="244" y2="124" stroke="var(--data-3)" stroke-width="3"/>
+        <polyline points="96,68 122,124 150,242 178,124 204,68" fill="none" stroke="var(--data-3)" stroke-width="2.5" stroke-linejoin="round"/>
+        <polyline points="122,124 150,68 178,124" fill="none" stroke="var(--data-3)" stroke-width="2.5" stroke-linejoin="round"/>
+      `;
+    }
+
+    function renderSwirl4(isGhost) {
+      let arms = ``;
+      for (let i = 0; i < 4; i++) {
+        const angle = i * 90;
+        const fill = isGhost ? `none` : (i % 2 === 0 ? `var(--data-2)` : `var(--data-1)`);
+        const stroke = isGhost ? `var(--ghost-stroke)` : `var(--on-surface)`;
+        const dash = isGhost ? `stroke-dasharray="6 4"` : ``;
+        arms += `<path d="M150,150 C146,104 184,64 224,72 C240,76 226,104 200,104 C180,104 170,126 150,150 Z" fill="${fill}" stroke="${stroke}" stroke-width="2.5" ${dash} transform="rotate(${angle} 150 150)"/>`;
+      }
+      const core = isGhost ? `` : `<circle cx="150" cy="150" r="14" fill="var(--surface-container-low)" stroke="var(--on-surface)" stroke-width="2.5"/>`;
+      return arms + core;
+    }
+
+    function renderTrapSquare(isGhost) {
+      const outer = `64,64 236,64 236,236 64,236`;
+      if (isGhost) {
+        return `<polygon points="${outer}" fill="none" stroke="var(--ghost-stroke)" stroke-width="3" stroke-dasharray="6 5"/>`;
+      }
+      return `
+        <polygon points="64,64 236,64 150,150" fill="var(--data-1)" stroke="var(--on-surface)" stroke-width="3"/>
+        <polygon points="64,64 150,150 64,236" fill="var(--data-1)" stroke="var(--on-surface)" stroke-width="3"/>
+        <polygon points="236,64 236,236 150,150" fill="var(--data-3)" stroke="var(--on-surface)" stroke-width="3"/>
+        <polygon points="64,236 150,150 236,236" fill="var(--data-4)" stroke="var(--on-surface)" stroke-width="3"/>
+      `;
+    }
+
+    /* ---------- Reflection Axis Overlays ---------- */
+    function axisLine(x1, y1, x2, y2) {
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--axis-reflection)" stroke-width="3.5" stroke-dasharray="9 6" stroke-linecap="round"/>`;
+    }
+    function renderVerticalAxis() {
+      return axisLine(150, 22, 150, 278);
+    }
+    function renderCrossAxes() {
+      return axisLine(150, 22, 150, 278) + axisLine(22, 150, 278, 150);
+    }
+    function renderTriangleAxes() {
+      let out = ``;
+      for (let i = 0; i < 3; i++) {
+        out += `<g transform="rotate(${i * 120} 150 150)">${axisLine(150, 22, 150, 260)}</g>`;
+      }
+      return out;
+    }
+    function renderSixAxes() {
+      let out = ``;
+      for (let i = 0; i < 6; i++) {
+        out += `<g transform="rotate(${i * 30} 150 150)">${axisLine(150, 20, 150, 280)}</g>`;
+      }
+      return out;
+    }
+    function renderNoAxesHint() {
+      return `
+        <line x1="150" y1="24" x2="150" y2="276" stroke="var(--error)" stroke-width="2.5" stroke-dasharray="6 6" opacity="0.6"/>
+        <rect x="74" y="256" width="152" height="28" rx="14" fill="var(--error-bg)" stroke="var(--error)" stroke-width="1.5"/>
+        <text x="150" y="275" text-anchor="middle" fill="var(--error)" font-size="13" font-weight="800">אין אף ציר שיקוף!</text>
+      `;
+    }
+
+    /* ---------- Web Audio API Kahoot-style Synthesizer ---------- */
+    let audioCtx = null;
+    let musicIntervalId = null;
+    let musicStep = 0;
+
+    function ensureAudioContext() {
+      if (!appState.soundEnabled) return null;
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      }
+      if (audioCtx && audioCtx.state === `suspended`) {
+        audioCtx.resume().catch(function () {});
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, durationSec, type, gainVal, delaySec) {
+      const ctx = ensureAudioContext();
+      if (!ctx || !appState.soundEnabled) return;
+      const now = ctx.currentTime + (delaySec || 0);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type || `triangle`;
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(gainVal || 0.14, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + durationSec + 0.02);
+    }
+
+    function playPercHit(isStrong) {
+      const ctx = ensureAudioContext();
+      if (!ctx || !appState.soundEnabled) return;
+      const now = ctx.currentTime;
+      const bufferSize = Math.floor(ctx.sampleRate * (isStrong ? 0.06 : 0.03));
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = `highpass`;
+      filter.frequency.value = isStrong ? 1800 : 4200;
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(isStrong ? 0.07 : 0.035, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + (isStrong ? 0.06 : 0.03));
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(now);
+    }
+
+    /* Upbeat bouncy Kahoot-inspired 16-step groove */
+    const BASS_SEQ = [146.83, 0, 293.66, 146.83, 174.61, 0, 196.00, 0, 220.00, 0, 261.63, 220.00, 196.00, 0, 174.61, 164.81];
+    const LEAD_SEQ = [587.33, 659.25, 698.46, 0, 880.00, 0, 783.99, 698.46, 587.33, 0, 698.46, 783.99, 880.00, 698.46, 659.25, 0];
+
+    function startBackgroundMusic() {
+      stopBackgroundMusic();
+      if (!appState.soundEnabled) return;
+      ensureAudioContext();
+      musicStep = 0;
+      musicIntervalId = setInterval(function () {
+        if (!appState.soundEnabled || !timerRunning) return;
+        const idx = musicStep % 16;
+        const bass = BASS_SEQ[idx];
+        const lead = LEAD_SEQ[idx];
+        if (bass > 0) playTone(bass, 0.16, `triangle`, 0.12, 0);
+        if (lead > 0) playTone(lead, 0.13, `sine`, 0.09, 0);
+        if (idx % 4 === 2) playPercHit(true);
+        else if (idx % 2 === 1) playPercHit(false);
+        musicStep++;
+      }, 165);
+    }
+
+    function stopBackgroundMusic() {
+      if (musicIntervalId !== null) {
+        clearInterval(musicIntervalId);
+        musicIntervalId = null;
+      }
+    }
+
+    function playUrgentTick(secondsLeft) {
+      const pitch = 840 + (10 - secondsLeft) * 75;
+      playTone(pitch, 0.08, `sine`, 0.18, 0);
+      playTone(pitch * 1.5, 0.05, `triangle`, 0.07, 0.02);
+    }
+
+    function playTimeUpSound() {
+      playTone(392.00, 0.22, `triangle`, 0.18, 0);
+      playTone(329.63, 0.22, `triangle`, 0.18, 0.18);
+      playTone(261.63, 0.45, `triangle`, 0.2, 0.36);
+    }
+
+    function playVictoryJingle() {
+      playTone(523.25, 0.14, `triangle`, 0.16, 0);
+      playTone(659.25, 0.14, `triangle`, 0.16, 0.09);
+      playTone(783.99, 0.14, `triangle`, 0.18, 0.18);
+      playTone(1046.50, 0.38, `sine`, 0.2, 0.27);
+    }
+
+    function playWrongSound() {
+      playTone(311.13, 0.14, `sawtooth`, 0.07, 0);
+      playTone(246.94, 0.26, `sawtooth`, 0.07, 0.12);
+    }
+
+    function playRotateClick() {
+      playTone(620, 0.05, `sine`, 0.08, 0);
+      playTone(880, 0.05, `sine`, 0.06, 0.025);
+    }
+
+    /* ---------- Application State ---------- */
+    let appState = {
+      currentIndex: 0,
+      activeTeam: 0,
+      teamStars: [0, 0, 0, 0, 0],
+      soundEnabled: true
+    };
+
+    let currentAngle = 0;
+    let showAxes = false;
+    let solutionVisible = false;
+    let timeLeft = ROUND_DURATION;
+    let timerRunning = false;
+    let timerIntervalId = null;
+    let selectedChoice = null;
+
+    async function persistState() {
+      if (window.notebookAppApi && typeof window.notebookAppApi.setAppState === `function`) {
+        try {
+          await window.notebookAppApi.setAppState({
+            currentIndex: appState.currentIndex,
+            activeTeam: appState.activeTeam,
+            teamStars: appState.teamStars.slice(),
+            soundEnabled: appState.soundEnabled
+          });
+        } catch (err) {
+          /* Ignore transient save errors in preview */
+        }
+      }
+    }
+
+    /* ---------- UI Rendering ---------- */
+    function renderAll() {
+      renderChallenge();
+      renderTeams();
+      renderDeckPills();
+      renderTimer();
+      renderSoundButton();
+    }
+
+    function renderChallenge() {
+      const ch = CHALLENGES[appState.currentIndex];
+      if (!ch) return;
+
+      const catBadge = document.getElementById(`categoryBadge`);
+      const trapBadge = document.getElementById(`trapBadge`);
+      const counter = document.getElementById(`questionCounter`);
+      const title = document.getElementById(`questionTitle`);
+      const prompt = document.getElementById(`questionPrompt`);
+      const ghostLayer = document.getElementById(`ghostLayer`);
+      const rotatingGroup = document.getElementById(`rotatingGroup`);
+      const axesLayer = document.getElementById(`axesLayer`);
+      const mirrorBtn = document.getElementById(`mirrorToggleBtn`);
+
+      if (catBadge) catBadge.textContent = ch.category;
+      if (trapBadge) trapBadge.style.display = ch.isTrap ? `inline-flex` : `none`;
+      if (counter) counter.textContent = `אתגר ${appState.currentIndex + 1} מתוך ${CHALLENGES.length}`;
+      if (title) title.textContent = ch.title;
+      if (prompt) prompt.textContent = ch.prompt;
+
+      if (ghostLayer) ghostLayer.innerHTML = ch.renderSvg(true);
+      if (rotatingGroup) {
+        rotatingGroup.innerHTML = ch.renderSvg(false);
+        rotatingGroup.style.transform = `rotate(${currentAngle}deg)`;
+      }
+      if (axesLayer) {
+        axesLayer.innerHTML = ch.renderAxes();
+        axesLayer.style.display = showAxes ? `block` : `none`;
+      }
+      if (mirrorBtn) {
+        mirrorBtn.classList.toggle(`btn-mirror-active`, showAxes);
+        mirrorBtn.textContent = showAxes ? `הסתר צירי שיקוף` : `בדיקת צירי שיקוף`;
+      }
+
+      updateAngleHud();
+      renderChoicesState();
+      renderSolutionBox();
+    }
+
+    function updateAngleHud() {
+      const ch = CHALLENGES[appState.currentIndex];
+      const angleHud = document.getElementById(`angleHud`);
+      const matchHud = document.getElementById(`matchHud`);
+      const normAngle = ((currentAngle % 360) + 360) % 360;
+
+      if (angleHud) {
+        angleHud.innerHTML = `זווית סיבוב: <bdi dir="ltr">${normAngle}°</bdi>`;
+      }
+      if (matchHud && ch) {
+        const isAligned = ch.validAngles.includes(normAngle);
+        matchHud.classList.remove(`hud-match-yes`, `hud-match-no`);
+        if (normAngle === 0) {
+          matchHud.classList.add(`hud-match-yes`);
+          matchHud.innerHTML = `מצב התחלה (<bdi dir="ltr">0°</bdi>)`;
+        } else if (isAligned) {
+          matchHud.classList.add(`hud-match-yes`);
+          matchHud.textContent = `התלכדות מושלמת עם המקור!`;
+        } else {
+          matchHud.classList.add(`hud-match-no`);
+          matchHud.textContent = `לא מתלכד עם המקור`;
+        }
+      }
+    }
+
+    function renderChoicesState() {
+      const ch = CHALLENGES[appState.currentIndex];
+      const buttons = document.querySelectorAll(`.choice-btn`);
+      buttons.forEach(function (btn) {
+        const val = btn.getAttribute(`data-choice`);
+        btn.classList.remove(`choice-correct`, `choice-wrong`);
+        if (selectedChoice === val) {
+          if (val === ch.answer) btn.classList.add(`choice-correct`);
+          else btn.classList.add(`choice-wrong`);
+        }
+      });
+    }
+
+    function renderSolutionBox() {
+      const ch = CHALLENGES[appState.currentIndex];
+      const box = document.getElementById(`solutionBox`);
+      const verdict = document.getElementById(`solutionVerdict`);
+      const text = document.getElementById(`solutionText`);
+      const btn = document.getElementById(`revealSolutionBtn`);
+      if (!box || !ch) return;
+
+      if (solutionVisible) {
+        box.classList.add(`visible`);
+        if (verdict) verdict.textContent = `התשובה הנכונה: ${ch.verdict}`;
+        if (text) text.innerHTML = ch.explanation;
+        if (btn) btn.textContent = `הסתר פתרון והסבר`;
+      } else {
+        box.classList.remove(`visible`);
+        if (btn) btn.textContent = `חשיפת פתרון והסבר מתמטי`;
+      }
+    }
+
+    function renderTeams() {
+      const list = document.getElementById(`teamsList`);
+      const banner = document.getElementById(`activeTeamBanner`);
+      const leaderBadge = document.getElementById(`leaderBadge`);
+      if (!list) return;
+
+      const maxStars = Math.max.apply(null, appState.teamStars);
+      let leaders = [];
+      appState.teamStars.forEach(function (s, idx) {
+        if (s > 0 && s === maxStars) leaders.push(idx + 1);
+      });
+
+      if (leaderBadge) {
+        if (leaders.length === 0) leaderBadge.textContent = `תחרות פתוחה`;
+        else if (leaders.length === 1) leaderBadge.textContent = `מוביל: צוות ${leaders[0]}`;
+        else leaderBadge.textContent = `תיקו בצמרת (${maxStars} ⭐)`;
+      }
+
+      if (banner) {
+        banner.textContent = `בתור על הלוח: צוות ${appState.activeTeam + 1}`;
+      }
+
+      let html = ``;
+      for (let i = 0; i < 5; i++) {
+        const isActive = i === appState.activeTeam;
+        const stars = appState.teamStars[i];
+        const isLead = maxStars > 0 && stars === maxStars;
+        html += `
+          <div class="team-row ${isActive ? `active-team` : ``}" onclick="selectTeam(${i})" role="button" tabindex="0">
+            <div class="team-identity">
+              <span class="team-dot" style="background-color: ${TEAM_COLORS[i]};"></span>
+              <span>צוות ${i + 1} ${isLead ? `👑` : ``}</span>
+            </div>
+            <div class="team-stars-display">${stars} ⭐</div>
+            <div class="team-controls" onclick="event.stopPropagation()">
+              <button type="button" class="btn-star-sub" aria-label="הורד כוכב לצוות ${i + 1}" onclick="adjustTeamStars(${i}, -1)">-</button>
+              <button type="button" class="btn-star-add" onclick="adjustTeamStars(${i}, 1)">+1 ⭐</button>
+            </div>
+          </div>
+        `;
+      }
+      list.innerHTML = html;
+    }
+
+    function renderDeckPills() {
+      const container = document.getElementById(`deckPills`);
+      if (!container) return;
+      let html = ``;
+      CHALLENGES.forEach(function (ch, idx) {
+        const isCurrent = idx === appState.currentIndex;
+        const trapMark = ch.isTrap ? `⚠️` : ``;
+        html += `
+          <button type="button" class="deck-pill ${isCurrent ? `current` : ``} ${ch.isTrap ? `trap-item` : ``}" onclick="goToChallenge(${idx})">
+            <span>${idx + 1}</span>${trapMark ? `<span>${trapMark}</span>` : ``}
+          </button>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function renderTimer() {
+      const digits = document.getElementById(`timerDigits`);
+      const circle = document.getElementById(`timerProgressCircle`);
+      const status = document.getElementById(`timerStatusLabel`);
+      const startBtn = document.getElementById(`startPauseTimerBtn`);
+
+      const isUrgent = timerRunning && timeLeft <= 10 && timeLeft > 0;
+      if (digits) {
+        digits.textContent = String(timeLeft).padStart(2, `0`);
+        digits.classList.toggle(`urgent`, isUrgent || timeLeft === 0);
+      }
+
+      if (circle) {
+        const ratio = timeLeft / ROUND_DURATION;
+        const offset = RING_CIRCUMFERENCE * (1 - ratio);
+        circle.style.strokeDashoffset = String(offset);
+        circle.classList.toggle(`urgent`, timeLeft <= 10);
+      }
+
+      if (status) {
+        if (timeLeft === 0) status.textContent = `הזמן נגמר!`;
+        else if (timerRunning && timeLeft <= 10) status.textContent = `10 שניות אחרונות!`;
+        else if (timerRunning) status.textContent = `הסבב בעיצומו`;
+        else if (timeLeft === ROUND_DURATION) status.textContent = `מוכנים להזנקה`;
+        else status.textContent = `הסבב מושהה`;
+      }
+
+      if (startBtn) {
+        if (timerRunning) {
+          startBtn.innerHTML = `⏸ השהה שעון`;
+        } else if (timeLeft === 0) {
+          startBtn.innerHTML = `▶ סבב חדש (<bdi dir="ltr">45</bdi> שנ׳)`;
+        } else {
+          startBtn.innerHTML = `▶ המשך / הפעל (<bdi dir="ltr">${timeLeft}</bdi> שנ׳)`;
+        }
+      }
+    }
+
+    function renderSoundButton() {
+      const btn = document.getElementById(`soundToggleBtn`);
+      const icon = document.getElementById(`soundIcon`);
+      const label = document.getElementById(`soundLabel`);
+      if (!btn || !icon || !label) return;
+
+      btn.classList.remove(`btn-sound-on`, `btn-sound-off`);
+      if (appState.soundEnabled) {
+        btn.classList.add(`btn-sound-on`);
+        icon.textContent = `🔊`;
+        label.textContent = `מוזיקה ואפקטים: פעיל`;
+      } else {
+        btn.classList.add(`btn-sound-off`);
+        icon.textContent = `🔇`;
+        label.textContent = `מוזיקה ואפקטים: מושתק`;
+      }
+    }
+
+    /* ---------- Interactive Handlers (Hoisted Functions) ---------- */
+    function rotateByStep(deg) {
+      currentAngle += deg;
+      playRotateClick();
+      const group = document.getElementById(`rotatingGroup`);
+      if (group) group.style.transform = `rotate(${currentAngle}deg)`;
+      updateAngleHud();
+    }
+
+    function resetRotation() {
+      currentAngle = 0;
+      playRotateClick();
+      const group = document.getElementById(`rotatingGroup`);
+      if (group) group.style.transform = `rotate(0deg)`;
+      updateAngleHud();
+    }
+
+    function toggleMirrorAxes() {
+      showAxes = !showAxes;
+      playRotateClick();
+      const axesLayer = document.getElementById(`axesLayer`);
+      const mirrorBtn = document.getElementById(`mirrorToggleBtn`);
+      if (axesLayer) axesLayer.style.display = showAxes ? `block` : `none`;
+      if (mirrorBtn) {
+        mirrorBtn.classList.toggle(`btn-mirror-active`, showAxes);
+        mirrorBtn.textContent = showAxes ? `הסתר צירי שיקוף` : `בדיקת צירי שיקוף`;
+      }
+    }
+
+    function submitChoice(choice) {
+      const ch = CHALLENGES[appState.currentIndex];
+      const feedback = document.getElementById(`feedbackStatus`);
+      selectedChoice = choice;
+      renderChoicesState();
+
+      if (choice === ch.answer) {
+        playVictoryJingle();
+        launchConfettiBurst();
+        solutionVisible = true;
+        renderSolutionBox();
+        if (feedback) feedback.textContent = `כל הכבוד! תשובה מדויקת — אפשר להעניק כוכב לצוות!`;
+      } else {
+        playWrongSound();
+        if (feedback) {
+          feedback.textContent = ch.isTrap
+            ? `אופס! שימו לב לצבעים — בדקו שוב או חשפו את ההסבר!`
+            : `לא מדויק — סובבו או בדקו צירי שיקוף על הלוח ונסו שוב!`;
+        }
+      }
+    }
+
+    function toggleSolution() {
+      solutionVisible = !solutionVisible;
+      playRotateClick();
+      renderSolutionBox();
+    }
+
+    function goToChallenge(idx) {
+      appState.currentIndex = idx;
+      currentAngle = 0;
+      showAxes = false;
+      solutionVisible = false;
+      selectedChoice = null;
+      const feedback = document.getElementById(`feedbackStatus`);
+      if (feedback) feedback.textContent = ``;
+      renderChallenge();
+      renderDeckPills();
+      persistState();
+    }
+
+    function selectTeam(teamIdx) {
+      appState.activeTeam = teamIdx;
+      renderTeams();
+      persistState();
+    }
+
+    function adjustTeamStars(teamIdx, delta) {
+      const nextVal = Math.max(0, appState.teamStars[teamIdx] + delta);
+      appState.teamStars[teamIdx] = nextVal;
+      if (delta > 0) {
+        playVictoryJingle();
+        launchConfettiBurst();
+      } else {
+        playRotateClick();
+      }
+      renderTeams();
+      persistState();
+    }
+
+    function toggleTimer() {
+      if (timerRunning) {
+        pauseTimer();
+      } else {
+        if (timeLeft === 0) timeLeft = ROUND_DURATION;
+        startTimer();
+      }
+    }
+
+    function startTimer() {
+      stopTimerInterval();
+      timerRunning = true;
+      ensureAudioContext();
+      startBackgroundMusic();
+      renderTimer();
+
+      timerIntervalId = setInterval(function () {
+        if (!timerRunning) return;
+        timeLeft = Math.max(0, timeLeft - 1);
+        if (timeLeft <= 10 && timeLeft > 0) {
+          playUrgentTick(timeLeft);
+        }
+        if (timeLeft === 0) {
+          pauseTimer();
+          playTimeUpSound();
+        }
+        renderTimer();
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      timerRunning = false;
+      stopTimerInterval();
+      stopBackgroundMusic();
+      renderTimer();
+    }
+
+    function stopTimerInterval() {
+      if (timerIntervalId !== null) {
+        clearInterval(timerIntervalId);
+        timerIntervalId = null;
+      }
+    }
+
+    function resetTimerOnly() {
+      pauseTimer();
+      timeLeft = ROUND_DURATION;
+      renderTimer();
+    }
+
+    function nextTeamAndQuestion() {
+      appState.activeTeam = (appState.activeTeam + 1) % 5;
+      appState.currentIndex = (appState.currentIndex + 1) % CHALLENGES.length;
+      currentAngle = 0;
+      showAxes = false;
+      solutionVisible = false;
+      selectedChoice = null;
+      const feedback = document.getElementById(`feedbackStatus`);
+      if (feedback) feedback.textContent = ``;
+
+      timeLeft = ROUND_DURATION;
+      renderAll();
+      startTimer();
+      persistState();
+    }
+
+    function toggleSound() {
+      appState.soundEnabled = !appState.soundEnabled;
+      if (appState.soundEnabled) {
+        ensureAudioContext();
+        playRotateClick();
+        if (timerRunning) startBackgroundMusic();
+      } else {
+        stopBackgroundMusic();
+      }
+      renderSoundButton();
+      persistState();
+    }
+
+    function toggleFullscreen() {
+      const label = document.getElementById(`fullscreenLabel`);
+      const feedback = document.getElementById(`feedbackStatus`);
+      const docEl = document.documentElement;
+      const isFull = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+
+      if (!isFull) {
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
+        if (req) {
+          Promise.resolve(req.call(docEl)).then(function () {
+            if (label) label.textContent = `יציאה ממסך מלא`;
+          }).catch(function () {
+            if (feedback) feedback.textContent = `למסך מלא במחשב לחצו F11 בדפדפן Edge`;
+          });
+        }
+      } else {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+        if (exit) {
+          Promise.resolve(exit.call(document)).then(function () {
+            if (label) label.textContent = `מסך מלא`;
+          }).catch(function () {});
+        }
+      }
+    }
+
+    function handleResetGame(btn) {
+      if (!btn) return;
+      if (btn.dataset.armed !== `true`) {
+        btn.dataset.armed = `true`;
+        btn.classList.add(`btn-warn-armed`);
+        btn.textContent = `לחצו שוב לאיפוס מלא`;
+        setTimeout(function () {
+          if (btn.dataset.armed === `true`) {
+            btn.dataset.armed = `false`;
+            btn.classList.remove(`btn-warn-armed`);
+            btn.textContent = `איפוס משחק`;
+          }
+        }, 3500);
+        return;
+      }
+
+      btn.dataset.armed = `false`;
+      btn.classList.remove(`btn-warn-armed`);
+      btn.textContent = `איפוס משחק`;
+
+      pauseTimer();
+      timeLeft = ROUND_DURATION;
+      appState.currentIndex = 0;
+      appState.activeTeam = 0;
+      appState.teamStars = [0, 0, 0, 0, 0];
+      currentAngle = 0;
+      showAxes = false;
+      solutionVisible = false;
+      selectedChoice = null;
+      const feedback = document.getElementById(`feedbackStatus`);
+      if (feedback) feedback.textContent = `המשחק אופס בהצלחה!`;
+
+      renderAll();
+      persistState();
+    }
+
+    /* ---------- Self-Contained Confetti Burst ---------- */
+    function launchConfettiBurst() {
+      const layer = document.getElementById(`confettiLayer`);
+      if (!layer) return;
+      const colors = [`var(--data-1)`, `var(--data-2)`, `var(--data-3)`, `var(--data-4)`, `var(--primary-container)`];
+      const originX = window.innerWidth * 0.5;
+      const originY = window.innerHeight * 0.38;
+
+      for (let i = 0; i < 36; i++) {
+        const piece = document.createElement(`span`);
+        piece.className = `confetti-piece`;
+        const angle = (Math.PI * 2 * i) / 36 + (Math.random() - 0.5) * 0.4;
+        const dist = 120 + Math.random() * 240;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist + 140;
+
+        piece.style.left = `${originX}px`;
+        piece.style.top = `${originY}px`;
+        piece.style.backgroundColor = colors[i % colors.length];
+        piece.style.setProperty(`--tx`, `${tx.toFixed(1)}px`);
+        piece.style.setProperty(`--ty`, `${ty.toFixed(1)}px`);
+
+        layer.appendChild(piece);
+        setTimeout(function () {
+          if (piece.parentNode) piece.parentNode.removeChild(piece);
+        }, 1400);
+      }
+    }
+
+    /* ---------- Initialization with Shim State ---------- */
+    async function initApp() {
+      if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === `function`) {
+        try {
+          const saved = await window.notebookAppApi.getAppState();
+          if (saved && typeof saved === `object`) {
+            if (typeof saved.currentIndex === `number` && saved.currentIndex >= 0 && saved.currentIndex < CHALLENGES.length) {
+              appState.currentIndex = saved.currentIndex;
+            }
+            if (typeof saved.activeTeam === `number` && saved.activeTeam >= 0 && saved.activeTeam < 5) {
+              appState.activeTeam = saved.activeTeam;
+            }
+            if (Array.isArray(saved.teamStars) && saved.teamStars.length === 5) {
+              appState.teamStars = saved.teamStars.map(function (n) { return Math.max(0, Number(n) || 0); });
+            }
+            if (typeof saved.soundEnabled === `boolean`) {
+              appState.soundEnabled = saved.soundEnabled;
+            }
+          }
+        } catch (err) {
+          /* Fallback to default initial state */
+        }
+      }
+
+      document.addEventListener(`fullscreenchange`, function () {
+        const label = document.getElementById(`fullscreenLabel`);
+        if (label) {
+          label.textContent = document.fullscreenElement ? `יציאה ממסך מלא` : `מסך מלא`;
+        }
+      });
+
+      renderAll();
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === `function`) {
+        window.notebookAppApi.notifyAppReady();
+      }
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
